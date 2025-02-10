@@ -4,3 +4,7 @@ __pycache__
 TEval*
 *.pkl
 *~
+silero_vad.jit
+whisper-models
+audio
+outputs
