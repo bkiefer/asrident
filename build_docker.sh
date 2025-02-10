@@ -1,1 +1,1 @@
-docker build -f Dockerfile -t whisper_asr .
+docker build -f Dockerfile -t asrident .
