@@ -126,15 +126,16 @@ class WhisperMicroServer():
         self.asr_sample_rate = 16000
         self.buffers_queued = 6
 
-        if micro:
+        self.loop = None
+        self.is_running = True
+        self.from_micro = micro
+
+        if self.from_micro:
             self.timestamp_fn = current_milli_time
             self.audio_queue = asyncio.Queue()
         else:
             self.timestamp_fn = audio_milli_time
             self.audio_queue = asyncio.Queue(maxsize=1)
-
-        self.loop = None
-        self.is_running = True
 
         self.config = config
         if 'asr_sample_rate' in config:
@@ -172,8 +173,6 @@ class WhisperMicroServer():
         #print(f'{self.asr_sample_rate} {self.sample_rate} {self.channels}')
 
         self.__init_whisper()
-        self.__init_transcription_thread(micro)
-
         self.__init_speaker_identification()
 
         # for monitoring (eventually)
@@ -207,9 +206,10 @@ class WhisperMicroServer():
                                           compute_type=whisper_config['compute_type'])
         logger.info("Whisper model initialized")
 
-    def __init_transcription_thread(self, daemon):
+    def __init_transcription_thread(self):
         logger.info("start transcription thread...")
-        self.transcribe_thread = Thread(target=self.transcribe, daemon=daemon)
+        self.transcribe_thread = Thread(target=self.transcribe,
+                                        daemon=self.from_micro)
         self.transcribe_thread.start()
         logger.info("transcription thread running")
 
@@ -310,7 +310,6 @@ class WhisperMicroServer():
                 conv_params['initial_prompt'] = self.prompt
             try:
                 logger.info("now transcribing")
-                int16arr = np.array(audio_segment)
                 segments, info = self.whisper_model.transcribe(
                     np.array(audio_segment), **conv_params)
                 logger.info("transcribing...")
@@ -334,6 +333,15 @@ class WhisperMicroServer():
                 self.__init_whisper()
         logger.info("Leaving transcribe")
 
+    def bytes2intlist(self, audio):
+        frame = np.frombuffer(audio, dtype=np.int16)
+        # monitor what comes in
+        # data will be self.sample_rate, mono, np.int16 ndarray
+        frame = self.resample(frame, self.channels, self.sample_rate)
+        #print('d', np.shape(data))
+        #print('vb1', len(voice_buffers))
+        return frame.tolist()
+
     async def audio_loop(self):
         logger.info(f'sample_rate: {self.asr_sample_rate}')
         is_voice = -1
@@ -346,15 +354,10 @@ class WhisperMicroServer():
             if len(voice_buffers) < window_size_samples + framesqueued:
                 # this is a byte buffer
                 audio = await self.audio_queue.get()
-                frame = np.frombuffer(audio, dtype=np.int16)
                 # monitor what comes in
                 if self.am:
                     self.am.writeframes(audio)
-                # data will be self.sample_rate, mono, np.int16 ndarray
-                frame = self.resample(frame, self.channels, self.sample_rate)
-                #print('d', np.shape(data))
-                #print('vb1', len(voice_buffers))
-                voice_buffers.extend(frame.tolist())
+                voice_buffers.extend(self.bytes2intlist(audio))
                 if len(voice_buffers) < window_size_samples + framesqueued:
                     continue
 
@@ -405,6 +408,7 @@ class WhisperMicroServer():
 
     async def run_micro(self):
         self.inputfile = None
+        self.__init_transcription_thread()
         self.loop = asyncio.get_running_loop()
         pipeline = self.config["pipeline"] if "pipeline" in self.config \
             else gm.PIPELINE
@@ -430,40 +434,34 @@ class WhisperMicroServer():
         self.audio_queue.put_nowait(self.silence_buffer)
         self.device.stop()
 
-    async def read_file(self, wf):
-        buffer_size = int(self.sample_rate * 0.2)  # 0.2 seconds of audio
-        is_running = True
-        while is_running:
-            data = wf.readframes(buffer_size)
-            if len(data) == 0:
-                is_running = False
-                await self.audio_queue.put(self.silence_buffer)
-                await self.audio_queue.put(self.silence_buffer)
-            else:
-                await self.audio_queue.put(data)
+    def read_file(self, file):
+        self.is_running = False   # leave transcribe when queue empty
+        with wave.open(file, "rb") as wf:
+            self.channels = wf.getnchannels()
+            self.sample_rate = wf.getframerate()
+            buffer_size = int(self.sample_rate * 0.2)  # 0.2 seconds of audio
+            filebuf = bytearray()
+            while True:
+                data = wf.readframes(buffer_size)
+                if len(data) > 0:
+                    filebuf.extend(data)
+                else:
+                    self.transcription_queue.put((self.bytes2intlist(filebuf), 0, 0))
+                    self.transcribe()
+                    break
 
-    async def read_file_and_monitor(self, wf):
-        with open_wave_file(self.wav_filename(), self.sample_rate,
-                            self.channels) as self.am:
-            await self.read_file(wf)
-
-    # async def run_file(self, wf):
-    #     self.loop = asyncio.get_running_loop()
-    #     processing = asyncio.create_task(self.audio_loop())
-    #     reading = asyncio.create_task(self.read_file(wf))
-    #     await reading
-    #     await processing
-    #     logger.info("Leaving run_file")
-    #     self.transcribe_thread.join()
-
-    def run(self, config):
-        if config.get('mqtt', False):
+    def run(self, config, files, mqtt):
+        if mqtt:
             print("Connecting to MQTT broker");
             self.mqtt_connect()
-        self.loop = asyncio.get_running_loop()
-        self.processing = asyncio.create_task(self.audio_loop())
-        self.processing.add_done_callback(
-            lambda t: logger.info("processing loop finished"))
+        #self.loop = asyncio.get_running_loop()
+        #self.processing = asyncio.create_task(self.audio_loop())
+        #self.processing.add_done_callback(
+        #   lambda t: logger.info("processing loop finished"))
+        for file in files:
+            self.inputfile = os.path.splitext(os.path.basename(file))[0]
+            logger.info("Processing {}".format(self.inputfile))
+            self.read_file(file)
 
     def stop_batch(self):
         self.is_running = False
@@ -474,9 +472,9 @@ class WhisperMicroServer():
 
 
 
-async def process_files(config_file, files, output_dir):
+def process_files(config_file, files, output_dir, mqtt):
     config = load_config(config_file)
-    root = output_dir if output_dir else os.path.dirname(file)
+    root = output_dir if output_dir else "outputs"
     if root[:-1] != os.sep:
         root += os.sep
     outdir = root
@@ -484,26 +482,14 @@ async def process_files(config_file, files, output_dir):
         logger.info("Creating {}".format(outdir))
         os.makedirs(outdir)
 
-    with open(outdir + os.sep + 'batch.csv', 'w') as csvfile:
+    with open(outdir + 'batch.csv', 'w') as csvfile:
         fieldnames = ['filename', 'start', 'end', 'text',
                       'embedid', 'speaker', 'confidence']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         config['audio_dir'] = outdir + os.sep
         ms = WhisperMicroServer(config, micro=False, transcription_file=writer)
-        ms.run(config)
-        for file in files:
-            ms.inputfile = file
-            logger.info("Processing {}".format(file))
-            filename = os.path.splitext(os.path.basename(file))[0]
-            with wave.open(file, "rb") as wf:
-                ms.channels = wf.getnchannels()
-                ms.sample_rate = wf.getframerate()
-                await ms.read_file(wf)
-            while not ms.transcription_queue.empty():
-                await asyncio.sleep(0.1)
-            await asyncio.sleep(5)
-    logger.info("Leave process_files")
+        ms.run(config, files, mqtt)
 
 
 def load_config(file):
@@ -543,6 +529,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if (args.files):
-        asyncio.run(process_files(args.config, args.files, args.output_dir))
+        process_files(args.config, args.files, args.output_dir, args.mqtt)
     else:
         main(args.config)
