@@ -29,4 +29,4 @@ COPY download-tdnn.sh /app
 
 RUN pip3 install --break-system-packages -r /app/requirements.txt
 RUN rm -rf /root/.cache/pip
-RUN download-tdnn.sh
+RUN /app/download-tdnn.sh
