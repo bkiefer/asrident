@@ -24,9 +24,9 @@ COPY transpeak.py /app
 COPY silero_vad.jit /app
 COPY run_whisper.sh /app
 COPY requirements.txt /app
+COPY pretrained_models/autoencoder.keras /app/pretrained_models/autoencoder.keras
+COPY download-tdnn.sh /app
 
 RUN pip3 install --break-system-packages -r /app/requirements.txt
-RUN pip3 install --break-system-packages python-ffmpeg
 RUN rm -rf /root/.cache/pip
-
-CMD ["/bin/bash", "-c", "./run_whisper.sh -c config.cfg"]
+RUN download-tdnn.sh

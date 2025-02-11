@@ -11,10 +11,9 @@ docker run -it \
        -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \
        -v $HOME/.config/pulse/cookie:/root/.config/pulse/cookie \
        -v "$scrdir/$1":/app/config.yml \
-       -v "$scrdir/pretrained_models":/app/pretrained_models \
        -v "$scrdir/whisper-models":/app/whisper-models \
        -v "$scrdir/audio":/app/audio \
        -v "$scrdir/outputs":/app/outputs \
        --gpus=all \
-       --entrypoint /bin/bash \
-       asrident -c "./run_whisper.sh -c config.yml"
+       --entrypoint=/bin/bash \
+       asrident -c "./run_whisper.sh -m -c config.yml"
