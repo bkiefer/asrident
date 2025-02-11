@@ -92,8 +92,8 @@ class SpeakerIdent:
         embedding = normalize(embedding, axis=1)[0]
 
         best_match = None
-        best_similarity = float('-inf')
-        second_best_sim = float('-inf')
+        best_similarity = -1.0
+        second_best_sim = -1.0
         for speaker, spkembedding in self.speaker_database.items():
             similarity = 1 - cosine(embedding, spkembedding[0])
             if similarity > best_similarity:
