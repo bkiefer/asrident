@@ -17,16 +17,17 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-gst-1.0 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY requirements.txt /app
+RUN pip3 install --break-system-packages -r /app/requirements.txt
+RUN rm -rf /root/.cache/pip
+
 COPY vad_iterator.py /app
 COPY gstmicpipeline.py /app
 COPY spkident.py /app
 COPY transpeak.py /app
 COPY silero_vad.jit /app
 COPY run_whisper.sh /app
-COPY requirements.txt /app
+
 COPY pretrained_models/autoencoder.keras /app/pretrained_models/autoencoder.keras
 COPY download-tdnn.sh /app
-
-RUN pip3 install --break-system-packages -r /app/requirements.txt
-RUN rm -rf /root/.cache/pip
 RUN /app/download-tdnn.sh

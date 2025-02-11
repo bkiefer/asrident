@@ -13,7 +13,7 @@ class SpeakerIdent:
 
     def __init__(self):
         self.ecapa_tdnn = EncoderClassifier.from_hparams(
-        source="./pretrained_models/spkrec-ecapa-voxceleb",
+        source="speechbrain/spkrec-ecapa-voxceleb",
         savedir="pretrained_models/spkrec-ecapa-voxceleb")
 
         # Load pretrained autoencoder
