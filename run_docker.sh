@@ -17,4 +17,4 @@ docker run -it \
        -v "$scrdir/outputs":/app/outputs \
        --gpus=all \
        --entrypoint /bin/bash \
-       whisper_asr -c "./run_whisper.sh -c config.yml"
+       asrident -c "./run_whisper.sh -c config.yml"

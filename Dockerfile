@@ -11,6 +11,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     gstreamer1.0-alsa \
     gstreamer1.0-pulseaudio \
     gstreamer1.0-plugins-base-apps \
+    ffmpeg \
     python3-pip \
     python3-cairo \
     python3-gst-1.0 && rm -rf /var/lib/apt/lists/*
@@ -25,6 +26,7 @@ COPY run_whisper.sh /app
 COPY requirements.txt /app
 
 RUN pip3 install --break-system-packages -r /app/requirements.txt
+RUN pip3 install --break-system-packages python-ffmpeg
 RUN rm -rf /root/.cache/pip
 
 CMD ["/bin/bash", "-c", "./run_whisper.sh -c config.cfg"]
