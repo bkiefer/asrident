@@ -1,0 +1,4 @@
+mqtt_address: 'localhost:1883'
+#millis_reconnect: 100
+topics:
+  - '#'
