@@ -32,10 +32,11 @@ asr_sample_rate: 16000
 
 whisper:
   #model_size: distil-whisper-large-v3-de-kd-ct2
-  model_size: large-v3
+  model_size: large-v2
   #model_size: medium
   device: gpu
   compute_type: float32
+  url: http://serv-9211.kl.dfki.de:8080/transcribe
 
 vad:
   threshold: 0.3

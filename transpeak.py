@@ -36,6 +36,17 @@ logging.basicConfig(
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 
+# enable debugging at httplib level (requests->urllib3->http.client)
+# You will see the REQUEST, including HEADERS and DATA, and RESPONSE
+# with HEADERS but without DATA.
+# The only thing missing will be the response.body which is not logged.
+
+# import http.client as http_client
+# http_client.HTTPConnection.debuglevel = 1
+#
+# requests_log = logging.getLogger("requests.packages.urllib3")
+# requests_log.setLevel(logging.DEBUG)
+# requests_log.propagate = True
 
 def int_or_str(text):
     """Helper function for argument parsing."""
@@ -348,8 +359,10 @@ class WhisperMicroServer():
                 remote_result['end'] = end
                 remote_result.update(self.speaker_identification(audio_segment))
                 self.send_transcription(remote_result)
-                for segment in remote_result['segments']:
-                    logger.info("[%.2fs -> %.2fs] %s" % (segment['start'], segment['end'], segment['text']))
+                if 'segments' in remote_result:
+                    for segment in remote_result['segments']:
+                        logger.info("[%.2fs -> %.2fs] %s"
+                                    % (segment['start'], segment['end'], segment['text']))
 
         logger.info("Leaving transcribe")
 
