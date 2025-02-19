@@ -15,6 +15,7 @@ import numpy as np
 import queue
 import traceback
 from threading import Thread
+import requests
 
 from faster_whisper import WhisperModel
 
@@ -306,31 +307,48 @@ class WhisperMicroServer():
             # this call blocks until an element can be retrieved from queue
             audio_segment, start, end = self.transcription_queue.get()
             conv_params = self.config['whisper_transcription']
-            if 'initial_prompt' not in conv_params and self.prompt:
+            #if 'initial_prompt' not in conv_params and self.prompt:
+            if self.prompt:
                 conv_params['initial_prompt'] = self.prompt
-            try:
-                logger.info("now transcribing")
-                segments, info = self.whisper_model.transcribe(
-                    np.array(audio_segment), **conv_params)
-                logger.info("transcribing...")
-                transcripts = []
-                for segment in segments:
-                    logger.info("[%.2fs -> %.2fs] %s"
-                                % (segment.start, segment.end, segment.text))
-                    conv_dict = named_tupel_to_dictionary(segment)
-                    transcripts.append(conv_dict)
-                res = {'info': named_tupel_to_dictionary(info),
-                       'segments': transcripts,
-                       'start': start, 'end': end}
-                res.update(self.speaker_identification(audio_segment))
-                self.send_transcription(res)
+            if ('whisper_processing' not in self.config or
+                    self.config['whisper_processing'] == 'local'):
+                try:
+                    logger.info("now transcribing")
+                    segments, info = self.whisper_model.transcribe(np.array(audio_segment), **conv_params)
+                    logger.info("transcribing...")
+                    transcripts = []
+                    for segment in segments:
+                        logger.info("[%.2fs -> %.2fs] %s"
+                                    % (segment.start, segment.end, segment.text))
+                        conv_dict = named_tupel_to_dictionary(segment)
+                        transcripts.append(conv_dict)
+                    res = {'info': named_tupel_to_dictionary(info),
+                           'segments': transcripts,
+                           'start': start, 'end': end}
+                    res.update(self.speaker_identification(audio_segment))
+                    self.send_transcription(res)
 
-            except Exception as ex:
-                logger.error('whisper exception: {}'.format(ex))
-                traceback.print_exc()
-                del self.whisper_model.model
-                del self.whisper_model
-                self.__init_whisper()
+                except Exception as ex:
+                    logger.error('whisper exception: {}'.format(ex))
+                    traceback.print_exc()
+                    del self.whisper_model.model
+                    del self.whisper_model
+                    self.__init_whisper()
+            elif self.config['whisper_processing'] == 'remote':
+                response = requests.post(url=self.config['whisper_url'],
+                                         data=audio_segment.tobytes(),
+                                         headers={'Content-Type': 'application/octet-stream'},
+                                         params=conv_params)
+                remote_result = response.json()
+                remote_result['start'] = start
+                remote_result['end'] = end
+                remote_result.update(self.speaker_identification(audio_segment))
+                self.send_transcription(remote_result)
+                for segment in remote_result['segments']:
+                    logger.info("[%.2fs -> %.2fs] %s" % (segment['start'], segment['end'], segment['text']))
+            else:
+                logger.error(f"unsupported Whisper processing mode {self.config['whisper_processing']}")
+
         logger.info("Leaving transcribe")
 
     def bytes2intlist(self, audio):
@@ -452,7 +470,7 @@ class WhisperMicroServer():
 
     def run(self, config, files, mqtt):
         if mqtt:
-            print("Connecting to MQTT broker");
+            print("Connecting to MQTT broker")
             self.mqtt_connect()
         #self.loop = asyncio.get_running_loop()
         #self.processing = asyncio.create_task(self.audio_loop())

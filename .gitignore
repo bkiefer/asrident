@@ -8,3 +8,4 @@ silero_vad.jit
 whisper-models
 audio
 outputs
+mqttrecorder.py

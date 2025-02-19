@@ -8,3 +8,4 @@ torch>=2.3.0, <2.4
 speechbrain
 scikit-learn
 keras
+requests>=2.32
