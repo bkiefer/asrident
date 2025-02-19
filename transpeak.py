@@ -186,6 +186,9 @@ class WhisperMicroServer():
             logger.error('no whisper config section: minimally specify model size')
             sys.exit(1)
         whisper_config = self.config['whisper']
+        self.whisper_url = whisper_config.get('url', None)
+        if self.whisper_url:
+            return   # using remote ASR
         if 'device' not in whisper_config or whisper_config['device'] == 'cpu':
             whisper_config['device'] = 'cpu'
             if not 'compute_type' in whisper_config:
@@ -310,8 +313,7 @@ class WhisperMicroServer():
             #if 'initial_prompt' not in conv_params and self.prompt:
             if self.prompt:
                 conv_params['initial_prompt'] = self.prompt
-            if ('whisper_processing' not in self.config or
-                    self.config['whisper_processing'] == 'local'):
+            if not self.whisper_url:
                 try:
                     logger.info("now transcribing")
                     segments, info = self.whisper_model.transcribe(np.array(audio_segment), **conv_params)
@@ -334,9 +336,11 @@ class WhisperMicroServer():
                     del self.whisper_model.model
                     del self.whisper_model
                     self.__init_whisper()
-            elif self.config['whisper_processing'] == 'remote':
-                response = requests.post(url=self.config['whisper_url'],
-                                         data=audio_segment.tobytes(),
+            else:
+                segment = np.array(audio_segment, dtype=np.float32)
+                segment /= 32768
+                response = requests.post(url=self.whisper_url,
+                                         data=segment.tobytes(),
                                          headers={'Content-Type': 'application/octet-stream'},
                                          params=conv_params)
                 remote_result = response.json()
@@ -346,8 +350,6 @@ class WhisperMicroServer():
                 self.send_transcription(remote_result)
                 for segment in remote_result['segments']:
                     logger.info("[%.2fs -> %.2fs] %s" % (segment['start'], segment['end'], segment['text']))
-            else:
-                logger.error(f"unsupported Whisper processing mode {self.config['whisper_processing']}")
 
         logger.info("Leaving transcribe")
 
