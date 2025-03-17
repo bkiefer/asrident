@@ -194,7 +194,7 @@ class WhisperMicroServer():
     def __init_whisper(self):
         self.whisper_model = None
         if 'whisper' not in self.config:
-            logger.error('no whisper config section: minimally specify model size')
+            logger.error('no whisper config section: minimally specify model size or URL')
             sys.exit(1)
         whisper_config = self.config['whisper']
         self.whisper_url = whisper_config.get('url', None)
