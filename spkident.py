@@ -110,4 +110,4 @@ class SpeakerIdent:
                 best_match = "Unknown"
         elif best_similarity < self.ABSOLUTE_THRESHOLD:
             best_match = "Unknown"
-        return best_match, best_similarity, embedding
+        return best_match, float(best_similarity), embedding

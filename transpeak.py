@@ -129,6 +129,8 @@ class WhisperMicroServer():
 
     def __init__(self, config, micro=True, transcription_file=None):
         self.pid = "whisperasr"
+        self.topics = {}  # string to fn or (fn, qos)
+
         self.audio_dir = "audio/"
         self.language = "de"
 
@@ -168,7 +170,7 @@ class WhisperMicroServer():
         if self.language:
             self.topic += '/' + self.language
         self.transcription_queue = queue.Queue(maxsize=1000)
-        self.prompt = ''
+        self.initial_prompt = ''
         self.client = None
         self.transcription_file = transcription_file
         self.__init_mqtt_client()
@@ -231,23 +233,53 @@ class WhisperMicroServer():
     def __init_mqtt_client(self):
         self.client = mqtt.Client(CallbackAPIVersion.VERSION2)
         # self.client.username_pw_set(self.mqtt_username, self.mqtt_password)
-        # self.client.on_connect = self.__on_mqtt_connect
+        self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
+        self.prompt_topic = self.pid + '/set_prompt'
+        self.topics[self.prompt_topic] = self._on_prompt_msg
 
     def __init_speaker_identification(self):
         self.spkident = SpeakerIdent()
         self.embeddings = {}
         self.embedid = 0
         self.speaker_identification_topic = self.pid + '/speakeridentification'
-        self.client.subscribe(self.speaker_identification_topic)
+        self.topics[self.speaker_identification_topic] = self._on_speakerid_msg
 
-    def _on_message(self, client, userdata, message):
-        print("Received message '" + str(message.payload) + "' on topic '"
-              + message.topic + "' with QoS " + str(message.qos))
+    def _on_prompt_msg(self, client, userdata, message):
+        self.initial_prompt = message.payload
+        logger.info(f'new prompt: {self.initial_prompt}')
+
+    def _on_speakerid_msg(self, client, userdata, message):
         speaker_ident = json.loads(message.payload)
         embedding = self.embeddings.pop(speaker_ident['id'], None)
-        if embedding:
+        logger.info(f'External {speaker_ident["id"]}: {speaker_ident["speaker"]}')
+        if embedding is not None:
+            logger.info(f'Adding embedding for speaker {speaker_ident["speaker"]}')
             self.spkident.add_speaker(embedding, speaker_ident['speaker'])
+
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
+        logger.debug(f'CONNACK received with code {reason_code}')
+        # subscribe to all registered topics/callbacks
+        for topic in self.topics:
+            qos = 0
+            if topic is tuple:
+                qos = topic[1]
+                topic = topic[0]
+            self.client.subscribe(topic, qos)
+
+    def _on_message(self, client, userdata, message):
+        logger.debug(f"Received message {str(message.payload)} on topic {message.topic} with QoS {str(message.qos)}")
+        if message.topic not in self.topics:
+            self.topics[message.topic] = None
+            for topic in self.topics:
+                if mqtt.topic_matches_sub(topic, message.topic):
+                    self.topics[message.topic] = self.topics[topic]
+        cb = self.topics[message.topic]
+        if cb is not None:
+            if cb is tuple:
+                cb = cb[0]  # second is qos
+            cb(client, userdata, message)
+        return
 
     def wav_filename(self):
         return self.audio_dir + f'source-{current_milli_time(0):014d}.wav'
@@ -303,8 +335,8 @@ class WhisperMicroServer():
         fl32arr = torch.tensor(audio_segment, dtype=torch.float32)
         fl32arr /= 32768
         (speaker, confidence, embedding) = self.spkident.identify_speaker(fl32arr)
-        self.embeddings[self.embedid] = embedding
         self.embedid += 1
+        self.embeddings[self.embedid] = embedding
         return { "embedid": self.embedid, "speaker": speaker,
                  "confidence": confidence,
                  }
@@ -322,8 +354,8 @@ class WhisperMicroServer():
             audio_segment, start, end = self.transcription_queue.get()
             conv_params = self.config['whisper_transcription']
             #if 'initial_prompt' not in conv_params and self.prompt:
-            if self.prompt:
-                conv_params['initial_prompt'] = self.prompt
+            if self.initial_prompt:
+                conv_params['initial_prompt'] = self.initial_prompt
             if not self.whisper_url:
                 try:
                     logger.info("now transcribing")
