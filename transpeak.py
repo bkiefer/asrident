@@ -511,7 +511,13 @@ class WhisperMicroServer():
                 if len(data) > 0:
                     filebuf.extend(data)
                 else:
-                    self.transcription_queue.put((self.bytes2intlist(filebuf), 0, 0))
+                    # all timestamps in milliseconds
+                    now = int(time.time() * 1000)
+                    buf = self.bytes2intlist(filebuf)
+                    # milliseconds since sample_rate is Hz
+                    duration = int(float(len(buf) * 1000) /
+                                   (self.sample_rate * self.channels))
+                    self.transcription_queue.put((buf, now, now + duration))
                     self.transcribe()
                     break
 
