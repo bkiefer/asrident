@@ -1,23 +1,28 @@
 #!/usr/bin/env python3
 
 import os
+from pathlib import Path
 import numpy as np
 from sklearn.preprocessing import normalize
 from scipy.spatial.distance import cosine
-from speechbrain.inference import EncoderClassifier
+from speechbrain.inference import EncoderClassifier, LocalStrategy
 os.environ["KERAS_BACKEND"] = "torch"
 from keras import models
 import torchaudio
 
+
 class SpeakerIdent:
 
-    def __init__(self):
+    def __init__(self, model_root: Path):
         self.ecapa_tdnn = EncoderClassifier.from_hparams(
-        source="speechbrain/spkrec-ecapa-voxceleb",
-        savedir="pretrained_models/spkrec-ecapa-voxceleb")
+            source="speechbrain/spkrec-ecapa-voxceleb",
+            savedir=model_root / 'spkrec-ecapa-voxceleb',
+            local_strategy=LocalStrategy.NO_LINK,
+            huggingface_cache_dir=model_root / 'spkrec-ecapa-voxceleb'
+        )
 
         # Load pretrained autoencoder
-        self.encoder = models.load_model('pretrained_models/autoencoder.keras')
+        self.encoder = models.load_model('models/autoencoder.keras')
 
         self.max_speaker_embeddings = 10
 

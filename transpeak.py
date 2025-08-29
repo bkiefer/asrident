@@ -2,6 +2,7 @@
 
 import sys
 import os
+from pathlib import Path
 import argparse
 import csv
 import asyncio
@@ -17,6 +18,7 @@ import traceback
 from threading import Thread
 import requests
 
+from dataclasses import is_dataclass, asdict
 from faster_whisper import WhisperModel
 
 import json
@@ -35,6 +37,8 @@ logging.basicConfig(
     level=logging.INFO)
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
+
+modroot = Path('.') / 'models'
 
 # enable debugging at httplib level (requests->urllib3->http.client)
 # You will see the REQUEST, including HEADERS and DATA, and RESPONSE
@@ -57,12 +61,16 @@ def int_or_str(text):
 
 
 def current_milli_time(audio_time):
-    """The audio_time argument is deliberately ignored!"""
+    """
+    Return the unix time in milliseconds.
+
+    The audio_time argument is deliberately ignored!
+    """
     return round(time.time() * 1000)
 
 
 def audio_milli_time(audio_time):
-    """ audio time is processed audio in seconds """
+    """Audio time is processed audio in seconds."""
     return round(audio_time * 1000)
 
 
@@ -74,14 +82,6 @@ def init_jit_model(model_path: str, device=torch.device('cpu')):
     return model
 
 
-def isinstance_namedtuple(obj):
-    return (
-            isinstance(obj, tuple) and
-            hasattr(obj, '_asdict') and
-            hasattr(obj, '_fields')
-    )
-
-
 def named_tupel_to_dictionary(tupel):
     """
     Convert a named tuple into a dictionary. Use nested dictionaries if tuple value is another tupel.
@@ -89,13 +89,13 @@ def named_tupel_to_dictionary(tupel):
     :return: named tupel converted into dictionary
     """
     result_dict = {}
-    for key, value in tupel._asdict().items():
-        if isinstance_namedtuple(value):
+    for key, value in asdict(tupel).items():
+        if is_dataclass(value):
             result_dict[key] = named_tupel_to_dictionary(value)
         elif isinstance(value, list):
             conv_list = []
             for item in value:
-                if isinstance_namedtuple(item):
+                if is_dataclass(item):
                     conv_list.append(named_tupel_to_dictionary(item))
                 elif isinstance(item, tuple):
                     # special handling of language prob lists
@@ -178,7 +178,7 @@ class WhisperMicroServer():
         self.silence_buffer = bytearray(WhisperMicroServer.BUFFER_SIZE *
                                         (self.buffers_queued + 1))
         # load silero VAD model
-        model = init_jit_model(model_path='silero_vad.jit')
+        model = init_jit_model(model_path=modroot / 'silero_vad.jit')
 
         vad_config = config['vad'] if 'vad' in config else dict()
         #print(type(vad_config['threshold']))
@@ -204,21 +204,21 @@ class WhisperMicroServer():
             return   # using remote ASR
         if 'device' not in whisper_config or whisper_config['device'] == 'cpu':
             whisper_config['device'] = 'cpu'
-            if not 'compute_type' in whisper_config:
+            if 'compute_type' not in whisper_config:
                 whisper_config['compute_type'] = 'int16'
         else:
             whisper_config['device'] = 'cuda'
-            if not 'compute_type' in whisper_config:
+            if 'compute_type' not in whisper_config:
                 whisper_config['compute_type'] = 'float32'
         if 'whisper_transcription' not in self.config:
             self.config['whisper_transcription'] = dict()
-        if self.language and not 'language' in self.config['whisper_transcription']:
+        if self.language and 'language' not in self.config['whisper_transcription']:
             self.config['whisper_transcription']['language'] = self.language
         logger.info(
             f"initializing {whisper_config['model_size']} model "
             f"for {whisper_config['device']} {whisper_config['compute_type']} ...")
-        model_path = "./whisper-models/" + whisper_config['model_size'] + '/'
-        self.whisper_model = WhisperModel(model_path,
+        model_path = modroot / 'whisper' / whisper_config['model_size']
+        self.whisper_model = WhisperModel(str(model_path),
                                           device=whisper_config['device'],
                                           compute_type=whisper_config['compute_type'])
         logger.info("Whisper model initialized")
@@ -239,7 +239,7 @@ class WhisperMicroServer():
         self.topics[self.prompt_topic] = self._on_prompt_msg
 
     def __init_speaker_identification(self):
-        self.spkident = SpeakerIdent()
+        self.spkident = SpeakerIdent(modroot)
         self.embeddings = {}
         self.embedid = 0
         self.speaker_identification_topic = self.pid + '/speakeridentification'
@@ -337,23 +337,22 @@ class WhisperMicroServer():
         (speaker, confidence, embedding) = self.spkident.identify_speaker(fl32arr)
         self.embedid += 1
         self.embeddings[self.embedid] = embedding
-        return { "embedid": self.embedid, "speaker": speaker,
-                 "confidence": confidence,
-                 }
+        return {"embedid": self.embedid, "speaker": speaker,
+                "confidence": confidence,
+                }
 
 
     def transcribe(self):
         """
         Monitor transcription queue for incoming audio to be transcribed with
-        local Whisper and add resulting transcriptions to result list
-        :return:
+        local Whisper and add resulting transcriptions to result list.
         """
 
         while self.is_running or not self.transcription_queue.empty():
             # this call blocks until an element can be retrieved from queue
             audio_segment, start, end = self.transcription_queue.get()
             conv_params = self.config['whisper_transcription']
-            #if 'initial_prompt' not in conv_params and self.prompt:
+            # if 'initial_prompt' not in conv_params and self.prompt:
             if self.initial_prompt:
                 conv_params['initial_prompt'] = self.initial_prompt
             if not self.whisper_url:
@@ -569,9 +568,9 @@ def load_config(file):
 
 
 def main(config_file):
-    #if len(args) < 1:
-    #    sys.stderr.write('Usage: %s <config.yaml> [audio_file(s)]\n' % args[0])
-    #    sys.exit(1)
+    # if len(args) < 1:
+    #     sys.stderr.write('Usage: %s <config.yaml> [audio_file(s)]\n' % args[0])
+    #     sys.exit(1)
 
     config = load_config(config_file)
     ms = WhisperMicroServer(config)

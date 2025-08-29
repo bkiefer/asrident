@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 ENV TZ=Europe/Berlin
-RUN apt-get update && apt-get upgrade -y
+RUN apt-get -q -qq update && apt-get upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     --no-install-recommends \
     libgstreamer1.0-dev \
@@ -25,9 +25,4 @@ COPY vad_iterator.py /app
 COPY gstmicpipeline.py /app
 COPY spkident.py /app
 COPY transpeak.py /app
-COPY silero_vad.jit /app
 COPY run_whisper.sh /app
-
-COPY pretrained_models/autoencoder.keras /app/pretrained_models/autoencoder.keras
-COPY download-tdnn.sh /app
-RUN /app/download-tdnn.sh

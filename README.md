@@ -16,7 +16,7 @@ are send to a MQTT topic, so this client requires a running MQTT broker. For thi
 These installation instructions are tested on Ubuntu 22.04, and do not require a virtual environment like venv or conda. Install python bindings for the gstreamer libraries, and the MQTT broker:
 
 ```
-sudo apt install libgirepository1.0-dev python3-gst-1.0 libcairo2-dev mosquitto python3-pip git
+sudo apt install libgirepository1.0-dev libgirepository2.0-dev python3-gst-1.0 libcairo2-dev mosquitto python3-pip git
 
 pip install -r requirements.txt
 ```

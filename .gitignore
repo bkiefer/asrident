@@ -5,7 +5,10 @@ TEval*
 *.pkl
 *~
 silero_vad.jit
-whisper-models
-audio
-outputs
+models/**
+audio/**
+outputs/**
 mqttrecorder.py
+.python-version
+uv.lock
+.projectile
