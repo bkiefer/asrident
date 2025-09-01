@@ -231,8 +231,11 @@ class WhisperMicroServer():
         logger.info("transcription thread running")
 
     def __init_mqtt_client(self):
+        mqtt_config = self.config['mqtt']
         self.client = mqtt.Client(CallbackAPIVersion.VERSION2)
-        # self.client.username_pw_set(self.mqtt_username, self.mqtt_password)
+        if 'username' in mqtt_config and 'password' in mqtt_config:
+            self.client.username_pw_set(mqtt_config['username'],
+                                        mqtt_config['password'])
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.prompt_topic = self.pid + '/set_prompt'
@@ -307,7 +310,12 @@ class WhisperMicroServer():
                                        bytes(indata))
 
     def mqtt_connect(self):
-        self.client.connect(self.config['mqtt_address'])
+        mqtt_config = self.config['mqtt']
+        mqtt_config = {key: mqtt_config[key] for key in
+                       ['host', 'port', 'keepalive',
+                        'bind_address', 'bind_port'
+                        'clean_start'] if key in mqtt_config}
+        self.client.connect(**mqtt_config)
         self.client.loop_start()
 
     def mqtt_disconnect(self):
