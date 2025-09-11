@@ -11,7 +11,8 @@ monitor_mic: true
 monitor_asr: true
 
 # Address of MQTT broker
-mqtt_address: localhost
+mqtt:
+  host: localhost
 
 # List the pulseaudio devices with this command:
 # pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
@@ -34,8 +35,8 @@ whisper:
   # if url is given, the other config slots are ignored
   #url: http://serv-9211.kl.dfki.de:8080/transcribe
   #model_size: distil-whisper-large-v3-de-kd-ct2
-  model_size: large-v2
-  #model_size: medium
+  model_size: large-v3-turbo
+  #model_size: tiny
   device: gpu
   compute_type: float32
 

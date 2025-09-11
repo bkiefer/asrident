@@ -13,6 +13,10 @@ else
     cd ..
 fi
 
+if test "$1" = "-l"; then
+    exit 0
+fi
+
 download_models() {
     docker run --rm --user "$(id -u):$(id -g)" \
            -v "$scrdir/download_models.py:/app/download_models.py" \

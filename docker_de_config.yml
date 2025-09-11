@@ -12,7 +12,8 @@ monitor_mic: true
 
 # Address of MQTT broker
 #mqtt_address: mqtt-broker # using docker compose
-mqtt_address: host.docker.internal # running locally
+mqtt:
+  host: host.docker.internal # running in isolated docker
 
 # List the pulseaudio devices with this command:
 # pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
@@ -33,7 +34,7 @@ asr_sample_rate: 16000
 
 whisper:
   #model_size: distil-whisper-large-v3-de-kd-ct2
-  model_size: large-v3
+  model_size: large-v3-turbo
   #model_size: medium
   #model_size: tiny
   device: gpu

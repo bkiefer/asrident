@@ -11,19 +11,29 @@ are send to a MQTT topic, so this client requires a running MQTT broker. For thi
 
 # Installation
 
-## Ubuntu 22.04
+## Ubuntu 22.04 and beyond
 
-These installation instructions are tested on Ubuntu 22.04, and do not require a virtual environment like venv or conda. Install python bindings for the gstreamer libraries, and the MQTT broker:
+These installation instructions are tested on Ubuntu 22.04 and beyond, and use the `uv` tool for package management. First install python bindings for the gstreamer libraries, and the MQTT broker:
 
+```commandline
+sudo apt install libgirepository-1.0-dev libgirepository-2.0-dev python3-gst-1.0 libcairo2-dev mosquitto git
+
+# get whisper-gstreamer submodule
+git pull --recurse-submodules
+git submodule update --init --recursive --remote
+
+# Install uv if not there already, and tell the shell where to find it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$PATH:$HOME/.local/bin"
+
+# install dependencies and create .venv
+uv sync
+uv pip install whisper-gstreamer
 ```
-sudo apt install libgirepository1.0-dev libgirepository2.0-dev python3-gst-1.0 libcairo2-dev mosquitto python3-pip git
 
-pip install -r requirements.txt
-```
+After the installation, libcairo-dev and its dependencies *can* be removed:
 
-After the installation, libcairo-dev and its dependencies can be removed:
-
-```
+```commandline
 sudo apt remove libcairo2-dev
 sudo apt autoremove
 ```
@@ -33,20 +43,6 @@ sudo apt autoremove
 
 ```commandline
 download-models.sh <optional-list-of-whisper-model-sizes>
-```
-
-## Ubuntu 24.04 and 24.10
-
-Due to some changes in pip, the following setup is proposed. First install miniconda or conda according to the installation instructions given on their website.
-
-Due to changes in package installation policies, installation is slightly different:
-
-```
-sudo apt install libgirepository1.0-dev python3-gst-1.0 libcairo2-dev mosquitto git
-
-conda create -n whisper python=3.12 pip
-conda activate whisper
-pip install -r requirements.txt
 ```
 
 ## After package installation
