@@ -1,22 +1,16 @@
 # What's the language of the ASR model (if any, is optional)
 # the language, if set, will be appended to the publishing topic like this:
 #/whisperasr/asrresult/<lang>
-language: de
-#language: en
+language: en
 
 # adaptation_state_infile="state"
 # adaptation_state_outfile="state"
 
-monitor_mic: true  # to save the input stream
-#monitor_asr: true # only if there are problems
+monitor_mic: true
+monitor_asr: false
 
 # Address of MQTT broker
-mqtt:
-  hostname: localhost
-#  hostname: mqtt-broker # using docker compose: host name of MQTT broker
-#  hostname: host.docker.internal # docker running in isolation
-# if using docker and MQTT broker runs on localhost, make sure it accepts
-# requests from "other" hosts
+mqtt_address: localhost
 
 # List the pulseaudio devices with this command:
 # pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
@@ -38,9 +32,8 @@ asr_sample_rate: 16000
 whisper:
   # if url is given, the other config slots are ignored
   #url: http://serv-9211.kl.dfki.de:8080/transcribe
-  #model_size: distil-whisper-large-v3-de-kd-ct2
   model_size: large-v3-turbo
-  #model_size: medium, base, tiny, large-v3 ...
+  #model_size: medium
   device: gpu
   compute_type: float32
 
@@ -50,10 +43,9 @@ vad:
 #  speech_pad_ms: 50
 
 whisper_transcription:
-    language: de
+    language: en
 #   task: asr
 #    initial_prompt: 'Andreas,Benno,Bodenoperator 1,Bodenoperator 2,Bodenroboter 2,Daniel,Dirk,Drohne,Drohnenoperator,Einsatzleiter,Lena,Markus,Mission Commander,Mission Operator,Operator 1,Operator 2,Operator Boden 1,Operator Boden 2,Operator UAV,Sven,Teamleader,Teamleiter,Teamleiter 1,Thorsten,UAV,UAV 1,UAV Drohne,UAV Operator,UGV 1,UGV 2,Feuerwehr Bochum,kommen,hört,höre'
-# initial_prompt does *not* work with distilled or small models
 #   prefix: ""
 #   prepend_punctuations: ''
 #   append_punctuations: ".?"

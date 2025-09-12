@@ -15,57 +15,50 @@ are send to a MQTT topic, so this client requires a running MQTT broker. For thi
 
 These installation instructions are tested on Ubuntu 22.04 and beyond, and use the `uv` tool for package management. First install python bindings for the gstreamer libraries, and the MQTT broker:
 
-```commandline
-sudo apt install libgirepository-1.0-dev libgirepository-2.0-dev python3-gst-1.0 libcairo2-dev mosquitto git
+    sudo apt install libgirepository-1.0-dev libgirepository-2.0-dev python3-gst-1.0 libcairo2-dev mosquitto git
 
-# get whisper-gstreamer submodule
-git pull --recurse-submodules
-git submodule update --init --recursive --remote
+    # get whisper-gstreamer submodule
+    git pull --recurse-submodules
+    git submodule update --init --recursive --remote
 
-# Install uv if not there already, and tell the shell where to find it
-curl -LsSf https://astral.sh/uv/install.sh | sh
-export PATH="$PATH:$HOME/.local/bin"
+    # Install uv if not there already, and tell the shell where to find it
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$PATH:$HOME/.local/bin"
 
-# install dependencies and create .venv
-uv sync
-uv pip install whisper-gstreamer
-```
+    # install dependencies and create .venv
+    uv sync
+    uv pip install whisper-gstreamer
+
 
 After the installation, libcairo-dev and its dependencies *can* be removed:
 
-```commandline
-sudo apt remove libcairo2-dev
-sudo apt autoremove
-```
+    sudo apt remove libcairo2-dev
+    sudo apt autoremove
 
-- Download the VAD model and the Faster Whisper models (large-v2 by default)
-  (faster whisper from [Huggingface](https://huggingface.co/guillaumekln))
+Download the VAD model, the speaker identification and the Faster Whisper models (large-v3-turbo by default) (faster whisper from [Huggingface](https://huggingface.co/guillaumekln))
 
-```commandline
-download-models.sh <optional-list-of-whisper-model-sizes>
-```
+
+    model_download.sh <optional-list-of-whisper-model-sizes>
+
 
 ## After package installation
 
 Maybe you have to adapt the pipeline in `local_de_config.yaml`, or the language, the current default expects a ReSpeaker as default PulseAudio device. For the ReSpeaker, use the multichannel, not the analog-stereo.monoto device! You can check your local audio device configuration with
 
-```
-pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
-```
+    pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
 
 Also, check the path to the cuda native libraries for `LD_LIBRARY_PATH` in the `run_whisper.sh` script in case of problems finding the `.so` libraries.
 
 To set the default source to the ReSpeaker, use:
 
-```
-pacmd set-default-source 'alsa_input.usb-SEEED_ReSpeaker_4_Mic_Array__UAC1.0_-00.multichannel-input'
-```
+
+    pacmd set-default-source 'alsa_input.usb-SEEED_ReSpeaker_4_Mic_Array__UAC1.0_-00.multichannel-input'
+
 
 Check the content of gstmicpipeline.py in case of problems. In the audio directory, the microphone audio is stored in asrmon-XX.wav files and the data transferred to the ASR in chunk-XX.wav
 
-```
-./run_whisper.sh local_de_config.yaml
-```
+    ./run_whisper.sh local_de_config.yaml
+
 
 The ASR result will be send to the `whisperasr/asrresult/<lang>` MQTT topic.
 
@@ -84,7 +77,3 @@ To run the dockerized version, use
 Be aware that this requires an MQTT broker that is running and accessible on the host system. The mosquitto service on a Linux system, for example, by default only accepts connections from localhost. To change that behaviour, you can create a file `10-externalconn.conf` in the directory `/etc/mosquitto/conf.d` with the following content:
 
     listener 1883 0.0.0.0
-
-# Speaker identification
-
-Currently needs a pretrained autoencoder under `pretrained_models/autoencoder.keras`. See the spkindent repository for instructions.

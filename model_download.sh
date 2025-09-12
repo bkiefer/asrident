@@ -25,7 +25,7 @@ download_models() {
 }
 
 if test -z "$1"; then
-    download_models large-v2
+    download_models large-v3-turbo
 else
     download_models "$@"
 fi
