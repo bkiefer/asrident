@@ -19,9 +19,9 @@ fi
 
 download_models() {
     docker run --rm --user "$(id -u):$(id -g)" \
-           -v "$scrdir/download_models.py:/app/download_models.py" \
-           -v "$scrdir/models":/app/models \
-           asrident:latest /app/download_models.py "$@"
+           -v "$scrdir/download_models.py:/app/asrident/download_models.py" \
+           -v "$scrdir/models":/app/asrident/models \
+           asrident:latest uv run download_models.py "$@"
 }
 
 if test -z "$1"; then
