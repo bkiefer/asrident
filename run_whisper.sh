@@ -1,7 +1,7 @@
 #!/bin/sh
 #set -x
 scrdir=`dirname $0`
-
+cd "$scrdir"
 if test -z "$ops_dir"; then
     if test -z "$pref"; then
         if test -d ".venv"; then
@@ -21,4 +21,4 @@ if test -z "$ops_dir"; then
 fi
 LD_LIBRARY_PATH="$ops_dir"
 export LD_LIBRARY_PATH
-python3 -u $scrdir/transpeak.py "$@"
+uv run python3 -u ./transpeak.py "$@"
