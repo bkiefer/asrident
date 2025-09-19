@@ -17,12 +17,7 @@ if test "$1" = "-l"; then
     exit 0
 fi
 
-download_models() {
-    docker run --rm --user "$(id -u):$(id -g)" \
-           -v "$scrdir/download_models.py:/app/asrident/download_models.py" \
-           -v "$scrdir/models":/app/asrident/models \
-           asrident:latest uv run download_models.py "$@"
-}
+download_models() { uv run download_models.py "$1"; }
 
 if test -z "$1"; then
     download_models large-v3-turbo
