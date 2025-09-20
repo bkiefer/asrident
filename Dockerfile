@@ -1,11 +1,11 @@
-FROM ubuntu:25.04
+FROM ubuntu:24.04
 
 ENV TZ=Europe/Berlin
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get -q -qq update && apt-get upgrade -y
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y --no-install-recommends --fix-missing \
     git curl ca-certificates \
-    gcc cmake pkg-config libcairo2-dev ibgirepository-2.0-dev python3-dev \
+    gcc cmake pkg-config libcairo2-dev libgirepository-2.0-dev python3-dev \
     libgstreamer1.0-dev \
     gstreamer1.0-pulseaudio gstreamer1.0-alsa \
     python3-gst-1.0 \
