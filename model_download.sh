@@ -18,9 +18,10 @@ if test "$1" = "-l"; then
 fi
 
 download_models() {
-    docker run --rm \
+    docker run --rm --user "$(id -u):$(id -g)" \
            -v "$scrdir/download_models.py:/app/asrident/download_models.py" \
            -v "$scrdir/models":/app/asrident/models \
+           -e HF_HOME=/app/asrident/models \
            asrident:latest \
            /bin/bash -c ". .venv/bin/activate; ./download_models.py $@"
 }
