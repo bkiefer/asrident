@@ -1,18 +1,19 @@
 # What's the language of the ASR model (if any, is optional)
 # the language, if set, will be appended to the publishing topic like this:
-#/whisperasr/asrresult/<lang>
+# /whisperasr/asrresult/<lang>
+
 language: de
 
 # adaptation_state_infile="state"
 # adaptation_state_outfile="state"
 
-
 monitor_mic: true
 monitor_asr: true
 
-# Address of MQTT broker
+# host of MQTT broker (specify port, too, if necessary)
 mqtt:
   host: localhost
+  port: 1883
 
 # List the pulseaudio devices with this command:
 # pacmd list-sources | grep -e 'index:' -e device.string -e 'name:'
@@ -26,46 +27,49 @@ mqtt:
 # It's the multichannel device!
 # channels: 6, used channel: 0 (combo channel), sample_rate: 16000
 # This pipeline does the right things already
-pipeline: "pulsesrc ! audio/x-raw,format=S16LE,channels=6,rate={} ! deinterleave name=d d.src_0 ! appsink name=sink emit_signals=true"
+#pipeline: 'alsasrc device="hw:1,0" ! audio/x-raw,format=S16LE,channels=1,rate=44100 ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate={} ! appsink name=sink emit_signals=true'
+#pipeline: "pulsesrc ! audioconvert ! audio/x-raw,format=S16LE,channels=1,rate={} ! appsink name=sink emit-signals=true"
+#pipeline: "pulsesrc ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate={} ! appsink name=sink emit-signals=true"
 
-# sample rate of the ASR model (currently 8k)
+# sample rate of the ASR model (currently 16k)
 asr_sample_rate: 16000
 
 whisper:
   # if url is given, the other config slots are ignored
   #url: http://serv-9211.kl.dfki.de:8080/transcribe
-  #model_size: distil-whisper-large-v3-de-kd-ct2
+  # model_size: distil-whisper-large-v3-de-kd-ct2
   model_size: large-v3-turbo
-  #model_size: tiny
+  # model_size: medium
+  # model_size: tiny
   device: gpu
   compute_type: float32
 
 vad:
-  threshold: 0.3
+  threshold: 0.2
   min_silence_duration_ms: 300
 #  speech_pad_ms: 50
 
 whisper_transcription:
-    language: de
-#   task: asr
-    initial_prompt: 'Andreas,Benno,Bodenoperator 1,Bodenoperator 2,Bodenroboter 2,Daniel,Dirk,Drohne,Drohnenoperator,Einsatzleiter,Lena,Markus,Mission Commander,Mission Operator,Operator 1,Operator 2,Operator Boden 1,Operator Boden 2,Operator UAV,Sven,Teamleader,Teamleiter,Teamleiter 1,Thorsten,UAV,UAV 1,UAV Drohne,UAV Operator,UGV 1,UGV 2,Feuerwehr Bochum,kommen,hört,höre'
-#   prefix: ""
-#   prepend_punctuations: ''
-#   append_punctuations: ".?"
-#   # int values
-#   beam_size: 3
-#   best_of: 3
-#   min_speech_duration_ms: 500
-#   min_silence_duration_ms: 400
-#   window_size_samples: 1000
-#   speech_pad_ms: 100
-#   # boolean values
-#   condition_on_previous_text: true
-#   suppress_blank: true
-#   without_timestamps: true
-#   word_timestamps: false
-    vad_filter: false
-#   # float list
-#   temperature: 0.0, 1.0
-#   # string list
-#   suppress_tokens: "bla", "blub"
+  language: de
+#  task: asr
+#   initial_prompt: 'Andreas,Benno,Bodenoperator 1,Bodenoperator 2,Bodenroboter 2,Daniel,Dirk,Drohne,Drohnenoperator,Einsatzleiter,Lena,Markus,Mission Commander,Mission Operator,Operator 1,Operator 2,Operator Boden 1,Operator Boden 2,Operator UAV,Sven,Teamleader,Teamleiter,Teamleiter 1,Thorsten,UAV,UAV 1,UAV Drohne,UAV Operator,UGV 1,UGV 2,Feuerwehr Bochum,kommen,hört,höre'
+#  prefix: ""
+#  prepend_punctuations: ''
+#  append_punctuations: ".?"
+#  # int values
+#  beam_size: 3
+#  best_of: 3
+#  min_speech_duration_ms: 500
+#  min_silence_duration_ms: 400
+#  window_size_samples: 1000
+#  speech_pad_ms: 100
+#  # boolean values
+#  condition_on_previous_text: true
+#  suppress_blank: true
+#  without_timestamps: true
+#  word_timestamps: false
+  vad_filter: false
+#  # float list
+#  temperature: 0.0, 1.0
+#  # string list
+#  suppress_tokens: "bla", "blub"

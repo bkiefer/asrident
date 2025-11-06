@@ -1,17 +1,16 @@
 # What's the language of the ASR model (if any, is optional)
 # the language, if set, will be appended to the publishing topic like this:
-#/whisperasr/asrresult/<lang>
+# /whisperasr/asrresult/<lang>
+
 language: de
 
 # adaptation_state_infile="state"
 # adaptation_state_outfile="state"
 
-
 monitor_mic: true
-#monitor_asr: true
+monitor_asr: true
 
-# Address of MQTT broker
-#mqtt_address: mqtt-broker # using docker compose
+# host of MQTT broker (specify port, too, if necessary)
 mqtt:
   host: host.docker.internal # running in isolated docker
 
@@ -27,7 +26,14 @@ mqtt:
 # It's the multichannel device!
 # channels: 6, used channel: 0 (combo channel), sample_rate: 16000
 # This pipeline does the right things already
-pipeline: "pulsesrc ! audio/x-raw,format=S16LE,channels=6,rate={} ! deinterleave name=d d.src_0 ! appsink name=sink emit_signals=true"
+# pipeline: "pulsesrc ! audio/x-raw,format=S16LE,channels=6,rate={} ! deinterleave name=d d.src_0 ! appsink name=sink emit_signals=true"
+#pipeline: "pulsesrc ! audioresample ! audio/x-raw,format=S16LE,channels=6,rate={} ! appsink name=sink emit_signals=true"
+
+# ALSA with hw und resampling, if the src does not support setting params
+pipeline: 'alsasrc device="hw:1,0" ! audioresample ! audio/x-raw,format=S16LE,channels=1,rate={} ! appsink name=sink emit_signals=true'
+
+# ALSA with plughw
+pipeline: 'alsasrc device="plughw:1,0" ! audio/x-raw,format=S16LE,channels=1,rate={} ! appsink name=sink emit_signals=true'
 
 # sample rate of the ASR model (currently 8k)
 asr_sample_rate: 16000
