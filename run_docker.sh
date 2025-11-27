@@ -8,6 +8,7 @@ scrdir=`dirname "$0"`
 config="$1"
 shift
 docker run -it \
+       --device /dev/snd --group-add audio \
        -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
        --add-host host.docker.internal:host-gateway \
        -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \
@@ -17,4 +18,5 @@ docker run -it \
        -v "$scrdir/audio":/app/asrident/audio \
        -v "$scrdir/outputs":/app/asrident/outputs \
        --gpus=all \
-       asrident /bin/bash -c "uv run ./run_whisper.sh -m -c config.yml"
+       --entrypoint=/bin/bash \
+       asrident -c "./run_whisper.sh -m -c config.yml"

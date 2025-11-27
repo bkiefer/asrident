@@ -21,4 +21,4 @@ if test -z "$ops_dir"; then
 fi
 LD_LIBRARY_PATH="$ops_dir"
 export LD_LIBRARY_PATH
-uv run python3 -u ./transpeak.py "$@"
+uv run python -u ./transpeak.py "$@"
