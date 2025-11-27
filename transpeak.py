@@ -26,9 +26,9 @@ class WhisperAsrIdentServer(WhisperMicroServer):
     Speaker indentification based on audio and (if available) external hints.
     """
 
-    def __init__(self, config, micro=True, transcription_file=None):
+    def __init__(self, config, transcription_file=None):
         """Initialize speaker identification and transcription."""
-        super().__init__(config, micro, transcription_file)
+        super().__init__(config, transcription_file)
         self.__init_speaker_identification()
 
     def __init_speaker_identification(self):
