@@ -17,4 +17,13 @@ dependencies = [
     "scikit-learn>=1.7.1",
     "speechbrain>=1.0.3",
     "huggingface-hub<1.0.0",
+    "whisper-gstreamer",
 ]
+
+[tool.uv.workspace]
+members = [
+    "whisper-gstreamer",
+]
+
+[tool.uv.sources]
+whisper-gstreamer = { workspace = true }
