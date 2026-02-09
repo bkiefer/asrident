@@ -13,6 +13,7 @@ dependencies = [
     "requests>=2.32",
     "resampy>=0.4.3",
     "torch>=2.8.0",
+    "torchaudio<=2.8.0",
     "keras>=3.11.3",
     "scikit-learn>=1.7.1",
     "speechbrain>=1.0.3",
