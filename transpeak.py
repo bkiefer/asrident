@@ -40,10 +40,11 @@ class WhisperAsrIdentServer(WhisperMicroServer):
 
     def _on_speakerid_msg(self, client, userdata, message):
         speaker_ident = json.loads(message.payload)
-        spk_from_id = speaker_ident["id"]
+        id = speaker_ident["id"]
+        spk_from_id = speaker_ident["embedid"]
         embedding = self.embeddings.pop(spk_from_id, None)
         spk_from_spk = speaker_ident["speaker"]
-        logger.info(f'External {spk_from_id}: {spk_from_spk}')
+        logger.info(f'External {spk_from_id}: {spk_from_spk} for {id}')
         if embedding is not None:
             logger.info(f'Add embedding for speaker {spk_from_spk}')
             self.spkident.add_speaker(embedding, spk_from_spk)
@@ -61,6 +62,7 @@ class WhisperAsrIdentServer(WhisperMicroServer):
 
     def transcribe_success(self, result, audio_segment):
         """Do speaker identification after successful transcription."""
+        result.update({'id': f'{result["source"]}_{result["start"]:d}'})
         result.update(self.__speaker_identification(audio_segment))
         super().transcribe_success(result, audio_segment)
 
