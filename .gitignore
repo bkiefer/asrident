@@ -8,7 +8,6 @@ silero_vad.jit
 models/**
 audio/**
 outputs/**
-mqttrecorder.py
 .python-version
 uv.lock
 .projectile
