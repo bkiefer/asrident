@@ -7,7 +7,7 @@ from sklearn.preprocessing import normalize
 from scipy.spatial.distance import cosine
 from speechbrain.inference import EncoderClassifier, LocalStrategy
 os.environ["KERAS_BACKEND"] = "torch"
-from keras import models
+from keras import models, Sequential
 import torchaudio
 
 
@@ -22,7 +22,7 @@ class SpeakerIdent:
         )
 
         # Load pretrained autoencoder
-        self.encoder = models.load_model('models/autoencoder.keras')
+        self.encoder: Sequential = models.load_model('models/autoencoder.keras')
 
         self.max_speaker_embeddings = 10
 
@@ -92,7 +92,7 @@ class SpeakerIdent:
         embedding = self.generate_embedding(audio_chunk)
         embedding = np.expand_dims(embedding, axis=0)  # add batch dimension
         # Encode with autoencoder, reduce dimensionality
-        embedding = self.encoder.predict(embedding)
+        embedding = self.encoder.predict(embedding, verbose="false")
         # Normalize
         embedding = normalize(embedding, axis=1)[0]
 

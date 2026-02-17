@@ -10,7 +10,7 @@ from spkident import SpeakerIdent
 
 
 # configure logger
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 modroot = Path('.') / 'models'
 
@@ -45,10 +45,10 @@ class WhisperAsrIdentServer(WhisperMicroServer):
             speaker_ident = json.loads(message.payload)
         except:
             return
-        id = speaker_ident["id"]  # id is unique
+        id = speaker_ident["id"]  # id is unique, check if we have embedding
         embedding = next(e for e in self.embeddings if e[0] == id)
         spk_from_spk = speaker_ident["speaker"]
-        logger.debug(f'External speaker info: {spk_from_spk} for {id}: {embedding}')
+        logger.debug(f'External speaker info for {id}: {spk_from_spk} instead of {embedding[2]}')
         if embedding is not None:
             embedding = embedding[1]
             logger.info(f'Add embedding for speaker {spk_from_spk}')
@@ -59,7 +59,7 @@ class WhisperAsrIdentServer(WhisperMicroServer):
         fl32arr = torch.tensor(audio_segment, dtype=torch.float32)
         fl32arr /= 32768
         (speaker, conf, embedding) = self.spkident.identify_speaker(fl32arr)
-        self.embeddings.append((unique_id, embedding))
+        self.embeddings.append((unique_id, embedding, speaker))
         while len(self.embeddings) > 4:
             self.embeddings.pop(0)
         return {"speaker": speaker, "confidence": conf,}
