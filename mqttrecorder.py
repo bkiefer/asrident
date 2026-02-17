@@ -60,6 +60,7 @@ class MqttRecorder():
         msg = str(message.payload.decode("utf-8"))
         now = str(now)
         self.out.write(now + '\t' + message.topic + '\t' + msg + '\n')
+        self.out.flush()
 
 
     def mqtt_connect(self, wait_forever=False):

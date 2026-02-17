@@ -22,6 +22,9 @@ ENV PATH="/root/.local/bin/:$PATH"
 WORKDIR /app
 RUN git clone https://github.com/bkiefer/asrident.git
 WORKDIR /app/asrident
+RUN git fetch origin drz
+RUN git branch drz -t origin/drz
+RUN git checkout drz
 RUN git pull --recurse-submodules
 RUN git submodule update --init --recursive --remote
 RUN uv sync
