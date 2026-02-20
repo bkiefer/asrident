@@ -1,7 +1,7 @@
 [project]
 name = "asrident"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "ASR and speaker identification"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
