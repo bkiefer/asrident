@@ -36,8 +36,8 @@ class WhisperAsrIdentServer(WhisperMicroServer):
     def _on_speakerid_msg(self, client, userdata, message):
         """Process json message telling us this is Speaker B, not Speaker A.
 
-        We can identify the embedding using the unique id that was there when the
-        estimation was sent.
+        We can identify the embedding using the unique id that was there when
+        the estimation was sent.
 
         { "id": "<uniq_id>", "speaker": "<mkm:Einsatzkraftd713e1f2_52>" }
         """
@@ -46,23 +46,28 @@ class WhisperAsrIdentServer(WhisperMicroServer):
         except:
             return
         id = speaker_ident["id"]  # id is unique, check if we have embedding
-        embedding = next(e for e in self.embeddings if e[0] == id)
-        spk_from_spk = speaker_ident["speaker"]
-        logger.debug(f'External speaker info for {id}: {spk_from_spk} instead of {embedding[2]}')
-        if embedding is not None:
-            embedding = embedding[1]
-            logger.info(f'Add embedding for speaker {spk_from_spk}')
-            self.spkident.add_speaker(embedding, spk_from_spk)
+        embedding_info = next((e for e in self.embeddings if e[0] == id), ())
+        if embedding_info:
+            spk_from_spk = speaker_ident["speaker"]
+            id, emb, label = embedding_info
+            self.embeddings.remove(embedding_info)
+            logger.info(
+                f'Add embedding for speaker {spk_from_spk}, not {label}')
+            self.spkident.add_speaker(emb, spk_from_spk)
 
     def __speaker_identification(self, audio_segment, unique_id):
-        logger.info("Attempting speaker identification...")
         fl32arr = torch.tensor(audio_segment, dtype=torch.float32)
         fl32arr /= 32768
-        (speaker, conf, embedding) = self.spkident.identify_speaker(fl32arr)
+        speaker, conf, embedding = self.spkident.identify_speaker(fl32arr)
         self.embeddings.append((unique_id, embedding, speaker))
-        while len(self.embeddings) > 4:
-            self.embeddings.pop(0)
-        return {"speaker": speaker, "confidence": conf,}
+        while len(self.embeddings) > 3:
+            id, emb, label = self.embeddings.pop(0)
+            if label != 'Unknown':
+                # this recognition was not questioned, support detected speaker
+                logger.debug(f"Support speaker {label}")
+                self.spkident.add_speaker(emb, label)
+        logger.info(f"Speaker identification: {speaker} {conf:.3f}")
+        return {"speaker": speaker, "confidence": conf}
 
     def transcribe_success(self, result, audio_segment):
         """Do speaker identification after successful transcription."""

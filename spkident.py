@@ -59,14 +59,13 @@ class SpeakerIdent:
         if speaker_id not in self.speaker_database:
             self.speaker_database[speaker_id] = [embedding, 1]
         else:
-            if self.speaker_database[speaker_id][1] < self.max_speaker_embeddings:
+            spk_data = self.speaker_database[speaker_id]  # [embedding, n]
+            if spk_data[1] < self.max_speaker_embeddings:
                 # compute incremental average
-                factor = self.speaker_database[speaker_id][1]
-                self.speaker_database[speaker_id][1] = factor + 1  # n
-                factor = factor / (factor + 1)  # n - 1 / n
-                self.speaker_database[speaker_id][0] = \
-                        (self.speaker_database[speaker_id][0] * factor # sum(1_n-1)
-                         + embedding) / self.speaker_database[1]
+                # first: sum_1^n+1 = n * avg_n + d_n+1
+                spk_data[0] = spk_data[0] * spk_data[1] + embedding
+                spk_data[1] += 1
+                spk_data[0] /= spk_data[1] # divide by n+1
 
 
     # function for spk identification
