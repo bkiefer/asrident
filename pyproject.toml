@@ -1,6 +1,6 @@
 [project]
 name = "asrident"
-version = "1.0.0"
+version = "1.1.0"
 description = "ASR and speaker identification"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -18,7 +18,7 @@ dependencies = [
     "scikit-learn>=1.7.1",
     "speechbrain>=1.0.3",
     "huggingface-hub<1.0.0",
-    "whisper-gstreamer",
+    "whisper-gstreamer>=1.1.1",
 ]
 
 [tool.uv.workspace]
