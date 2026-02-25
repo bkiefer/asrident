@@ -1,11 +1,8 @@
 FROM mypy:3.11
 
 WORKDIR /app
-RUN git init
-RUN git remote add origin https://github.com/bkiefer/asrident.git
-RUN git fetch
-RUN git checkout -t origin/drz
-RUN git pull --recurse-submodules
-RUN git submodule update --init --recursive --remote
+COPY whisper-gstreamer/pyproject.toml /app/whisper-gstreamer/pyproject.toml
+COPY whisper-gstreamer/src /app/whisper-gstreamer/src
+COPY pyproject.toml transpeak.py spkident.py run_whisper.sh /app
 RUN uv sync
 RUN uv pip install -e ./whisper-gstreamer
