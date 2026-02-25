@@ -1,11 +1,10 @@
 FROM mypy:3.11
 
 WORKDIR /app
-RUN git clone https://github.com/bkiefer/asrident.git
-WORKDIR /app/asrident
-RUN git fetch origin drz
-RUN git branch drz -t origin/drz
-RUN git checkout drz
+RUN git init
+RUN git remote add origin https://github.com/bkiefer/asrident.git
+RUN git fetch
+RUN git checkout -t origin/drz
 RUN git pull --recurse-submodules
 RUN git submodule update --init --recursive --remote
 RUN uv sync
