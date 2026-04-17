@@ -5,7 +5,7 @@ import torch
 import logging
 import json
 
-from transcriptor import WhisperMicroServer, main, logger
+from whisper_transcriptor import WhisperMicroServer, main, logger
 from spkident import SpeakerIdent
 
 
@@ -78,4 +78,4 @@ class WhisperAsrIdentServer(WhisperMicroServer):
 
 
 if __name__ == '__main__':
-    main(WhisperAsrIdentServer)
+    main(WhisperAsrIdentServer, "Whisper Server")
