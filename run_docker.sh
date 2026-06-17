@@ -8,7 +8,15 @@ scrdir=`dirname "$0"`
 config="$1"
 version=`grep version "$scrdir/pyproject.toml" | sed 's/version *= *"\([^"]*\)".*/\1/'`
 shift
-docker run -it \
+
+if test -z "$DOCKER_ARGS"; then
+    # for debugging
+    args=("-it")
+else
+    readarray -t -d '' args < <(xargs printf '%s\0' <<<"$DOCKER_ARGS")
+fi
+
+docker run "${args[@]}" \
        --device /dev/snd --group-add audio \
        -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
        --add-host host.docker.internal:host-gateway \

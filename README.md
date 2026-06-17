@@ -77,3 +77,15 @@ To run the dockerized version, use
 Be aware that this requires an MQTT broker that is running and accessible on the host system. The mosquitto service on a Linux system, for example, by default only accepts connections from localhost. To change that behaviour, you can create a file `10-externalconn.conf` in the directory `/etc/mosquitto/conf.d` with the following content:
 
     listener 1883 0.0.0.0
+
+# Testing
+To test the module, build the docker image as described and download the 'medium' model using
+
+    ./model_download.sh medium
+
+Make sure a MQTT broker is running on the local host and standard port 1883.
+Now start the test script
+
+    ./test_asrident.sh
+
+It should output two 'Success' messages, the first indicating the correct transcription of the test audio, the second the correct functioning of the speaker recognition functionality.
