@@ -18,7 +18,7 @@ class SpeakerIdent:
             source="speechbrain/spkrec-ecapa-voxceleb",
             savedir=model_root / 'spkrec-ecapa-voxceleb',
             local_strategy=LocalStrategy.NO_LINK,
-            huggingface_cache_dir=model_root / 'spkrec-ecapa-voxceleb'
+            # huggingface_cache_dir=model_root / 'spkrec-ecapa-voxceleb'
         )
 
         # Load pretrained autoencoder
