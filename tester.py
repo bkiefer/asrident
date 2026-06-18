@@ -120,6 +120,7 @@ class TestClass():
                 print(f"Success {self.state}")
             else:
                 print(f"Failure {self.state}")
+            self.publish('whisperasr/control', 'exit')
             self.mqtt_disconnect()
 
     def run(self, wait_forever=True):
@@ -131,6 +132,10 @@ class TestClass():
             self.mqtt_connect(wait_forever=wait_forever)
         except Exception as e:
             logger.error('Exception: {}'.format(e))
+        finally:
+            if self.client.is_connected():
+                self.publish('whisperasr/control', 'exit')
+            self.mqtt_disconnect()
 
 
 def main():

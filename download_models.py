@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
 from speechbrain.inference import EncoderClassifier, LocalStrategy
 from faster_whisper import utils
 import sys
