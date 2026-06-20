@@ -1,7 +1,11 @@
 #!/bin/sh
 #set -x
 mkdir audio > /dev/null 2>&1
+here=`pwd`
 scrdir=`dirname "$0"`
+cd $scrdir
+# Not using $scrdir since we assume the cd there!!
+
 if test -f models/silero_vad.jit; then
     :
 else
@@ -18,12 +22,15 @@ if test "$1" = "-l"; then
 fi
 
 download_models() {
+    version=`grep version "pyproject.toml" | sed 's/version *= *"\([^"]*\)".*/\1/'`
+    # uv can not be used since it is owned by root!
     docker run --rm --user "$(id -u):$(id -g)" \
-           -v "$scrdir/download_models.py:/app/asrident/download_models.py" \
-           -v "$scrdir/models":/app/asrident/models \
+           -v "download_models.py:/app/asrident/download_models.py" \
+           -v "models":/app/asrident/models \
            -e HF_HOME=/app/asrident/models \
-           asrident:latest \
-           /bin/bash -c ". .venv/bin/activate; ./download_models.py $@"
+           asrident:$version \
+           /bin/bash -c ". .venv/bin/activate ; cd asrident; python download_models.py $@"
+    test -d models/whisper
 }
 
 if test -z "$1"; then
