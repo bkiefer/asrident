@@ -25,11 +25,11 @@ download_models() {
     version=`grep version "pyproject.toml" | sed 's/version *= *"\([^"]*\)".*/\1/'`
     # uv can not be used since it is owned by root!
     docker run --rm --user "$(id -u):$(id -g)" \
-           -v "download_models.py:/app/asrident/download_models.py" \
-           -v "models":/app/asrident/models \
-           -e HF_HOME=/app/asrident/models \
+           -v "./download_models.py:/app/download_models.py" \
+           -v "./models":/app/models \
+           -e HF_HOME=/app/models \
            asrident:$version \
-           /bin/bash -c ". .venv/bin/activate ; cd asrident; python download_models.py $@"
+           /bin/bash -c ". .venv/bin/activate ; python download_models.py $@"
     test -d models/whisper
 }
 
