@@ -1,4 +1,7 @@
 #!/bin/sh
+if test \! -d models/whisper/medium; then
+    ./model_download.sh medium
+fi
 if docker images 2>&1 | grep -q asrident; then
     DOCKER_ARGS="--rm -d --name 'test_asr'" ./run_docker.sh test_config.yml
     until docker logs test_asr 2>&1 | grep -q 'sample_rate: 16000'; do
