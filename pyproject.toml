@@ -1,6 +1,6 @@
 [project]
 name = "asrident"
-version = "1.2.0"
+version = "1.2.1"
 description = "ASR and speaker identification"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,7 +12,7 @@ dependencies = [
     "pyyaml>=6.0",
     "requests>=2.32",
     "resampy>=0.4.3",
-    "torch<2.8.0",
+    "torch<=2.8.0",
     "torchaudio<=2.8.0",
     "keras>=3.11.3",
     "scikit-learn>=1.7.1",
@@ -26,5 +26,13 @@ members = [
     "whisper-gstreamer",
 ]
 
+
+[[tool.uv.index]]
+name = "cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
 [tool.uv.sources]
 whisper-gstreamer = { workspace = true }
+torch = { index = "cu126" }
+torchaudio = { index = "cu126" }
