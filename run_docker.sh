@@ -21,7 +21,6 @@ docker run "${args[@]}" \
        -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
        --add-host host.docker.internal:host-gateway \
        -v ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native \
-       -v $HOME/.config/pulse/cookie:/root/.config/pulse/cookie \
        -v "$scrdir/${config}":/app/config.yml \
        -v "$scrdir/models":/app/models \
        -v "$scrdir/audio":/app/audio \
